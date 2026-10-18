@@ -17,9 +17,9 @@
  * @ION_HEAP_TYPE_SYSTEM:        Reserved heap id for ion heap that allocates
  *				 memory using alloc_page(). Also, supports
  *				 deferred free and allocation pools.
-* @ION_HEAP_TYPE_DMA:		 Reserved heap id for ion heap that manages
- * 				 single CMA (contiguous memory allocator)
- * 				 region. Uses standard DMA APIs for
+ * @ION_HEAP_TYPE_DMA:		 Reserved heap id for ion heap that manages
+ *				 single CMA (contiguous memory allocator)
+ *				 region. Uses standard DMA APIs for
  *				 managing memory within the CMA region.
  */
 enum ion_heap_type {
@@ -34,7 +34,7 @@ enum ion_heap_type {
  * ion_heap_id - list of standard heap ids that Android can use
  *
  * @ION_HEAP_SYSTEM		Id for the ION_HEAP_TYPE_SYSTEM
- * @ION_HEAP_DMA_START 		Start of reserved id range for heaps of type
+ * @ION_HEAP_DMA_START		Start of reserved id range for heaps of type
  *				ION_HEAP_TYPE_DMA
  * @ION_HEAP_DMA_END		End of reserved id range for heaps of type
  *				ION_HEAP_TYPE_DMA

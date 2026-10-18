@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only WITH Linux-syscall-note */
 /*
  * Copyright (c) 2013-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2021, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _RMNET_IPA_FD_IOCTL_H
@@ -88,9 +89,9 @@ struct wan_ioctl_set_data_quota {
  * @set_quota:       Indicate whether to set the quota/warning (use 1) or
  *                   unset the quota/warning.
  * @set_warning:     Indicate whether to set the quota/warning (use 1) or
-  * 				  unset the quota/warning.
- * @warning_mbytes:    Warning (in Mbytes) for the above interface.
- * @set_warning:       Indicate whether to set the warning (use 1) or
+ *                   unset the quota/warning.
+ * @warning_mbytes:  Warning (in Mbytes) for the above interface.
+ * @set_warning:     Indicate whether to set the warning (use 1) or
  *                   unset the warning.
  *
  * The structure to be used by the user space in order to request

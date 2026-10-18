@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only WITH Linux-syscall-note */
 /*
  * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2021-2023, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _MSM_IPA_H_
@@ -140,12 +141,14 @@
 #define IPA_IOCTL_SET_IPPT_SW_FLT               90
 #define IPA_IOCTL_ADD_MACSEC_MAPPING            92
 #define IPA_IOCTL_DEL_MACSEC_MAPPING            93
-#define IPA_IOCTL_QUERY_CACHED_DRIVER_MSG	94
-
+#define IPA_IOCTL_SET_NAT_EXC_RT_TBL_IDX        94
+#define IPA_IOCTL_SET_CONN_TRACK_EXC_RT_TBL_IDX 95
+#define IPA_IOCTL_COAL_EVICT_POLICY             96
+#define IPA_IOCTL_SET_EXT_ROUTER_MODE           97
 /**
  * max size of the header to be inserted
  */
-#define IPA_HDR_MAX_SIZE 64
+#define IPA_HDR_MAX_SIZE 255
 
 /**
  * max size of the name of the resource (routing table, header)
@@ -469,7 +472,7 @@ enum ipa_client_type {
 	IPA_CLIENT_MHI_PRIME_RMNET_CONS		= 99,
 
 	IPA_CLIENT_MHI_PRIME_DPL_PROD		= 100,
-	/* RESERVED CONS                        = 101, */
+	IPA_CLIENT_MHI_COAL_CONS			= 101,
 
 	IPA_CLIENT_AQC_ETHERNET_PROD		= 102,
 	IPA_CLIENT_AQC_ETHERNET_CONS		= 103,
@@ -506,9 +509,21 @@ enum ipa_client_type {
 
 	/* RESERVED PROD                        = 124, */
 	IPA_CLIENT_TPUT_CONS                    = 125,
+
+	/* RESERVED PROD                        = 126, */
+	IPA_CLIENT_APPS_LAN_COAL_CONS           = 127,
+
+	IPA_CLIENT_IPSEC_DECAP_PROD		= 128,
+	IPA_CLIENT_IPSEC_DECAP_RECOVERABLE_ERR_CONS = 129,
+
+	IPA_CLIENT_IPSEC_ENCAP_PROD		= 130,
+	IPA_CLIENT_IPSEC_DECAP_NON_RECOVERABLE_ERR_CONS = 131,
+
+	IPA_CLIENT_Q6_DL_NLO_DATA_XLAT_PROD     = 132,
+	IPA_CLIENT_IPSEC_ENCAP_ERR_CONS		= 133,
 };
 
-#define IPA_CLIENT_MAX (IPA_CLIENT_TPUT_CONS + 1)
+#define IPA_CLIENT_MAX (IPA_CLIENT_IPSEC_ENCAP_ERR_CONS + 1)
 
 #define IPA_CLIENT_WLAN2_PROD IPA_CLIENT_A5_WLAN_AMPDU_PROD
 #define IPA_CLIENT_Q6_DL_NLO_DATA_PROD IPA_CLIENT_Q6_DL_NLO_DATA_PROD
@@ -536,9 +551,19 @@ enum ipa_client_type {
 #define IPA_CLIENT_APPS_WAN_LOW_LAT_DATA_PROD IPA_CLIENT_APPS_WAN_LOW_LAT_DATA_PROD
 #define IPA_CLIENT_APPS_WAN_LOW_LAT_DATA_CONS IPA_CLIENT_APPS_WAN_LOW_LAT_DATA_CONS
 #define IPA_CLIENT_Q6_DL_NLO_LL_DATA_PROD IPA_CLIENT_Q6_DL_NLO_LL_DATA_PROD
+#define IPA_CLIENT_APPS_LAN_COAL_CONS IPA_CLIENT_APPS_LAN_COAL_CONS
+#define IPA_CLIENT_MHI_COAL_CONS IPA_CLIENT_MHI_COAL_CONS
+#define IPA_CLIENT_IPSEC_DECAP_PROD IPA_CLIENT_IPSEC_DECAP_PROD
+#define IPA_CLIENT_IPSEC_ENCAP_PROD IPA_CLIENT_IPSEC_ENCAP_PROD
+#define IPA_CLIENT_Q6_DL_NLO_DATA_XLAT_PROD IPA_CLIENT_Q6_DL_NLO_DATA_XLAT_PROD
+#define IPA_CLIENT_IPSEC_DECAP_RECOVERABLE_ERR_CONS IPA_CLIENT_IPSEC_DECAP_RECOVERABLE_ERR_CONS
+#define IPA_CLIENT_IPSEC_DECAP_NON_RECOVERABLE_ERR_CONS \
+	IPA_CLIENT_IPSEC_DECAP_NON_RECOVERABLE_ERR_CONS
+#define IPA_CLIENT_IPSEC_ENCAP_ERR_CONS IPA_CLIENT_IPSEC_ENCAP_ERR_CONS
 
 #define IPA_CLIENT_IS_APPS_CONS(client) \
 	((client) == IPA_CLIENT_APPS_LAN_CONS || \
+	(client) == IPA_CLIENT_APPS_LAN_COAL_CONS || \
 	(client) == IPA_CLIENT_APPS_WAN_CONS || \
 	(client) == IPA_CLIENT_APPS_WAN_COAL_CONS || \
 	(client) == IPA_CLIENT_APPS_WAN_LOW_LAT_CONS || \
@@ -559,7 +584,19 @@ enum ipa_client_type {
 
 #define IPA_CLIENT_IS_WAN_CONS(client) \
 	((client) == IPA_CLIENT_APPS_WAN_CONS || \
-	(client) == IPA_CLIENT_APPS_WAN_COAL_CONS)
+	 (client) == IPA_CLIENT_APPS_WAN_COAL_CONS)
+
+#define IPA_CLIENT_IS_LAN_CONS(client) \
+	((client) == IPA_CLIENT_APPS_LAN_CONS || \
+	 (client) == IPA_CLIENT_APPS_LAN_COAL_CONS)
+
+#define IPA_CLIENT_IS_LAN_or_WAN_CONS(client) \
+	((client) == IPA_CLIENT_APPS_LAN_CONS || \
+	 (client) == IPA_CLIENT_APPS_WAN_CONS)
+
+#define IPA_CLIENT_IS_APPS_COAL_CONS(client) \
+	((client) == IPA_CLIENT_APPS_LAN_COAL_CONS || \
+	 (client) == IPA_CLIENT_APPS_WAN_COAL_CONS)
 
 #define IPA_CLIENT_IS_LOW_LAT_CONS(client) \
 	((client) == IPA_CLIENT_APPS_WAN_LOW_LAT_CONS)
@@ -643,7 +680,8 @@ enum ipa_client_type {
 	(client) == IPA_CLIENT_MHI_DPL_CONS || \
 	(client) == IPA_CLIENT_MHI_LOW_LAT_CONS || \
 	(client) == IPA_CLIENT_MHI_LOW_LAT_PROD || \
-	(client) == IPA_CLIENT_MHI_QDSS_CONS)
+	(client) == IPA_CLIENT_MHI_QDSS_CONS || \
+	(client) == IPA_CLIENT_MHI_COAL_CONS)
 
 #define IPA_CLIENT_IS_TEST_PROD(client) \
 	((client) == IPA_CLIENT_TEST_PROD || \
@@ -916,13 +954,13 @@ enum ipa_macsec_event {
 #define IPA_MACSEC_EVENT_MAX IPA_MACSEC_EVENT_MAX
 };
 
-enum ipa_done_restore_event {
-	IPA_DONE_RESTORE_EVENT = IPA_MACSEC_EVENT_MAX,
-	IPA_DONE_RESTORE_EVENT_MAX
-	#define IPA_DONE_RESTORE_EVENT_MAX IPA_DONE_RESTORE_EVENT_MAX
+enum ipa_ext_route_evt {
+	IPA_SET_EXT_ROUTER_MODE_EVENT = IPA_MACSEC_EVENT_MAX,
+	IPA_SET_EXT_ROUTER_MODE_EVENT_MAX
+#define IPA_SET_EXT_ROUTER_MODE_EVENT_MAX IPA_SET_EXT_ROUTER_MODE_EVENT_MAX
 };
 
-#define IPA_EVENT_MAX_NUM (IPA_DONE_RESTORE_EVENT_MAX)
+#define IPA_EVENT_MAX_NUM (IPA_SET_EXT_ROUTER_MODE_EVENT_MAX)
 #define IPA_EVENT_MAX ((int)IPA_EVENT_MAX_NUM)
 
 /**
@@ -990,6 +1028,9 @@ enum ipa_rm_resource_name {
  * @IPA_HW_v4_11: IPA hardware version 4.11
  * @IPA_HW_v5_0: IPA hardware version 5.0
  * @IPA_HW_v5_1: IPA hardware version 5.1
+ * @IPA_HW_v5_2: IPA hardware version 5.2
+ * @IPA_HW_v5_5: IPA hardware version 5.5
+ * @IPA_HW_v6_0: IPA hardware version 6.0
  */
 enum ipa_hw_type {
 	IPA_HW_None = 0,
@@ -1014,8 +1055,11 @@ enum ipa_hw_type {
 	IPA_HW_v5_0 = 21,
 	IPA_HW_v5_1 = 22,
 	IPA_HW_v5_2 = 23,
+	IPA_HW_v5_5 = 24,
+	IPA_HW_v6_0 = 25,
 };
-#define IPA_HW_MAX (IPA_HW_v5_2 + 1)
+
+#define IPA_HW_MAX (IPA_HW_v6_0 + 1)
 
 #define IPA_HW_v4_0 IPA_HW_v4_0
 #define IPA_HW_v4_1 IPA_HW_v4_1
@@ -1027,6 +1071,8 @@ enum ipa_hw_type {
 #define IPA_HW_v5_0 IPA_HW_v5_0
 #define IPA_HW_v5_1 IPA_HW_v5_1
 #define IPA_HW_v5_2 IPA_HW_v5_2
+#define IPA_HW_v5_5 IPA_HW_v5_5
+#define IPA_HW_v6_0 IPA_HW_v6_0
 
 /**
  * struct ipa_rule_attrib - attributes of a routing/filtering
@@ -1041,8 +1087,8 @@ enum ipa_hw_type {
  * @spi: IPSec SPI
  * @src_port: exact src port
  * @dst_port: exact dst port
- * @meta_data: meta-data val
- * @meta_data_mask: meta-data mask
+ * @meta_data: metadata val
+ * @meta_data_mask: metadata mask
  * @u.v4.tos: type of service
  * @u.v4.protocol: protocol
  * @u.v4.src_addr: src address value
@@ -1060,6 +1106,7 @@ enum ipa_hw_type {
  * @payload_length: Payload length.
  * @ext_attrib_mask: Extended attributes.
  * @l2tp_udp_next_hdr: next header in L2TP tunneling
+ * @frag_encoding: is-frag equation
  */
 struct ipa_rule_attrib {
 	uint32_t attrib_mask;
@@ -1104,7 +1151,7 @@ struct ipa_rule_attrib {
 	__u16 payload_length;
 	__u32 ext_attrib_mask;
 	__u8 l2tp_udp_next_hdr;
-	__u8 padding1;
+	__u8 is_frag_encoding;
 	__u32 padding2;
 };
 
@@ -1229,6 +1276,10 @@ struct ipa_ipfltri_rule_eq {
 	struct ipa_ipfltr_mask_eq_32 metadata_meq32;
 	/*! Specifies if the Fragment equation is present in this rule */
 	uint8_t ipv4_frag_eq_present;
+	/*! The IS-FRAG equation enhancement change since IPA6.0
+	 * values: IS-FRAG-0, Is-Primary-1, Is-Secondary-2, Not-Frag-3
+	 */
+	uint8_t is_frag_encoding;
 };
 
 /**
@@ -1274,6 +1325,8 @@ struct ipa_flt_rule {
 	uint8_t pdn_idx;
 };
 
+#define IPA_FLTRT_TTL_UPDATE
+
 /**
  * struct ipa_flt_rule_v2 - attributes of a filtering rule
  * @retain_hdr: bool switch to instruct IPA core to add back to the packet
@@ -1306,6 +1359,8 @@ struct ipa_flt_rule {
  * will be assigned by ipa driver.
  * @close_aggr_irq_mod: close aggregation/coalescing and close GSI
  * interrupt moderation
+ * @ttl_update: bool to indicate whether TTL update is needed or not.
+ * @qos_class: QOS classification value.
  */
 struct ipa_flt_rule_v2 {
 	uint8_t retain_hdr;
@@ -1324,6 +1379,8 @@ struct ipa_flt_rule_v2 {
 	uint8_t enable_stats;
 	uint8_t cnt_idx;
 	uint8_t close_aggr_irq_mod;
+	uint8_t ttl_update;
+	uint8_t qos_class;
 };
 
 /**
@@ -1433,6 +1490,9 @@ struct ipa_rt_rule {
  * will be assigned by ipa driver.
  * @close_aggr_irq_mod: close aggregation/coalescing and close GSI
  * interrupt moderation
+ * @ttl_update: bool to indicate whether TTL update is needed or not.
+ * @qos_class: QOS classification value.
+ * @skip_ingress: bool to skip ingress policing.
  */
 struct ipa_rt_rule_v2 {
 	enum ipa_client_type dst;
@@ -1446,6 +1506,9 @@ struct ipa_rt_rule_v2 {
 	uint8_t enable_stats;
 	uint8_t cnt_idx;
 	uint8_t close_aggr_irq_mod;
+	uint8_t ttl_update;
+	uint8_t qos_class;
+	uint8_t skip_ingress;
 };
 
 /**
@@ -1486,7 +1549,7 @@ struct ipa_hdr_add {
 struct ipa_ioc_add_hdr {
 	uint8_t commit;
 	uint8_t num_hdrs;
-	struct ipa_hdr_add hdr[0];
+	struct ipa_hdr_add hdr[];
 };
 
 /**
@@ -1663,7 +1726,7 @@ struct ipa_hdr_proc_ctx_add {
 struct ipa_ioc_add_hdr_proc_ctx {
 	uint8_t commit;
 	uint8_t num_proc_ctxs;
-	struct ipa_hdr_proc_ctx_add proc_ctx[0];
+	struct ipa_hdr_proc_ctx_add proc_ctx[];
 };
 
 /**
@@ -1727,7 +1790,7 @@ struct ipa_hdr_del {
 struct ipa_ioc_del_hdr {
 	uint8_t commit;
 	uint8_t num_hdls;
-	struct ipa_hdr_del hdl[0];
+	struct ipa_hdr_del hdl[];
 };
 
 /**
@@ -1754,7 +1817,7 @@ struct ipa_hdr_proc_ctx_del {
 struct ipa_ioc_del_hdr_proc_ctx {
 	uint8_t commit;
 	uint8_t num_hdls;
-	struct ipa_hdr_proc_ctx_del hdl[0];
+	struct ipa_hdr_proc_ctx_del hdl[];
 };
 
 /**
@@ -1810,7 +1873,7 @@ struct ipa_ioc_add_rt_rule {
 	enum ipa_ip_type ip;
 	char rt_tbl_name[IPA_RESOURCE_NAME_MAX];
 	uint8_t num_rules;
-	struct ipa_rt_rule_add rules[0];
+	struct ipa_rt_rule_add rules[];
 };
 
 /**
@@ -1857,7 +1920,7 @@ struct ipa_ioc_add_rt_rule_after {
 	char rt_tbl_name[IPA_RESOURCE_NAME_MAX];
 	uint8_t num_rules;
 	uint32_t add_after_hdl;
-	struct ipa_rt_rule_add rules[0];
+	struct ipa_rt_rule_add rules[];
 };
 
 /**
@@ -1931,7 +1994,7 @@ struct ipa_ioc_mdfy_rt_rule {
 	uint8_t commit;
 	enum ipa_ip_type ip;
 	uint8_t num_rules;
-	struct ipa_rt_rule_mdfy rules[0];
+	struct ipa_rt_rule_mdfy rules[];
 };
 
 /**
@@ -2025,7 +2088,7 @@ struct ipa_ioc_add_rt_rule_ext {
 	enum ipa_ip_type ip;
 	char rt_tbl_name[IPA_RESOURCE_NAME_MAX];
 	uint8_t num_rules;
-	struct ipa_rt_rule_add_ext rules[0];
+	struct ipa_rt_rule_add_ext rules[];
 };
 
 /**
@@ -2067,7 +2130,7 @@ struct ipa_ioc_del_rt_rule {
 	uint8_t commit;
 	enum ipa_ip_type ip;
 	uint8_t num_hdls;
-	struct ipa_rt_rule_del hdl[0];
+	struct ipa_rt_rule_del hdl[];
 };
 
 /**
@@ -2137,7 +2200,7 @@ struct ipa_ioc_add_flt_rule {
 	enum ipa_client_type ep;
 	uint8_t global;
 	uint8_t num_rules;
-	struct ipa_flt_rule_add rules[0];
+	struct ipa_flt_rule_add rules[];
 };
 
 /**
@@ -2188,7 +2251,7 @@ struct ipa_ioc_add_flt_rule_after {
 	enum ipa_client_type ep;
 	uint8_t num_rules;
 	uint32_t add_after_hdl;
-	struct ipa_flt_rule_add rules[0];
+	struct ipa_flt_rule_add rules[];
 };
 
 /**
@@ -2260,7 +2323,7 @@ struct ipa_ioc_mdfy_flt_rule {
 	uint8_t commit;
 	enum ipa_ip_type ip;
 	uint8_t num_rules;
-	struct ipa_flt_rule_mdfy rules[0];
+	struct ipa_flt_rule_mdfy rules[];
 };
 
 /**
@@ -2308,7 +2371,7 @@ struct ipa_ioc_del_flt_rule {
 	uint8_t commit;
 	enum ipa_ip_type ip;
 	uint8_t num_hdls;
-	struct ipa_flt_rule_del hdl[0];
+	struct ipa_flt_rule_del hdl[];
 };
 
 /**
@@ -2369,12 +2432,12 @@ struct ipa_ioc_tx_intf_prop {
  * struct ipa_ioc_query_intf_tx_props - interface tx propertie
  * @name: name of interface
  * @num_tx_props: number of TX properties
- * @tx[0]: output parameter, the tx properties go here back to back
+ * @tx[]: output parameter, the tx properties go here back to back
  */
 struct ipa_ioc_query_intf_tx_props {
 	char name[IPA_RESOURCE_NAME_MAX];
 	uint32_t num_tx_props;
-	struct ipa_ioc_tx_intf_prop tx[0];
+	struct ipa_ioc_tx_intf_prop tx[];
 };
 
 /**
@@ -2405,12 +2468,12 @@ struct ipa_ioc_ext_intf_prop {
  * struct ipa_ioc_query_intf_ext_props - interface ext propertie
  * @name: name of interface
  * @num_ext_props: number of EXT properties
- * @ext[0]: output parameter, the ext properties go here back to back
+ * @ext[]: output parameter, the ext properties go here back to back
  */
 struct ipa_ioc_query_intf_ext_props {
 	char name[IPA_RESOURCE_NAME_MAX];
 	uint32_t num_ext_props;
-	struct ipa_ioc_ext_intf_prop ext[0];
+	struct ipa_ioc_ext_intf_prop ext[];
 };
 
 /**
@@ -2436,7 +2499,7 @@ struct ipa_ioc_rx_intf_prop {
 struct ipa_ioc_query_intf_rx_props {
 	char name[IPA_RESOURCE_NAME_MAX];
 	uint32_t num_rx_props;
-	struct ipa_ioc_rx_intf_prop rx[0];
+	struct ipa_ioc_rx_intf_prop rx[];
 };
 
 /**
@@ -2556,7 +2619,7 @@ struct ipa_ioc_nat_dma_one {
 struct ipa_ioc_nat_dma_cmd {
 	uint8_t entries;
 	uint8_t mem_type;
-	struct ipa_ioc_nat_dma_one dma[0];
+	struct ipa_ioc_nat_dma_one dma[];
 };
 
 /**
@@ -2644,6 +2707,12 @@ enum ipa_peripheral_ep_type {
 	IPA_DATA_EP_TYP_ETH,
 };
 
+enum ipa_data_ep_prot_type {
+	IPA_PROT_RMNET = 0,
+	IPA_PROT_RMNET_CV2X = 1,
+	IPA_PROT_MAX
+};
+
 struct ipa_ep_pair_info {
 	__u32 consumer_pipe_num;
 	__u32 producer_pipe_num;
@@ -2659,6 +2728,8 @@ struct ipa_ep_pair_info {
  * @num_ep_pairs: number of ep_pairs - o/p param
  * @ep_pair_size: sizeof(ipa_ep_pair_info) * max_ep_pairs
  * @info: structure contains ep pair info
+ * @teth_prot : RMNET/CV2X --i/p param
+ * @teth_prot_valid - validity of i/p param protocol
  */
 struct ipa_ioc_get_ep_info {
 	enum ipa_peripheral_ep_type ep_type;
@@ -2667,6 +2738,8 @@ struct ipa_ioc_get_ep_info {
 	__u8 num_ep_pairs;
 	__u16 padding;
 	__u64 info;
+	enum ipa_data_ep_prot_type teth_prot;
+	__u8 teth_prot_valid;
 };
 
 /**
@@ -2704,7 +2777,7 @@ struct ipa_ioc_wigig_fst_switch {
 };
 
 /**
- * struct ipa_msg_meta - Format of the message meta-data.
+ * struct ipa_msg_meta - Format of the message metadata.
  * @msg_type: the type of the message
  * @rsvd: reserved bits for future use.
  * @msg_len: the length of the message in bytes
@@ -2732,6 +2805,7 @@ struct ipa_msg_meta {
  * struct ipa_wlan_msg - To hold information about wlan client
  * @name: name of the wlan interface
  * @mac_addr: mac address of wlan client
+ * @if_index: netdev interface index
  *
  * wlan drivers need to pass name of wlan iface and mac address of
  * wlan client along with ipa_wlan_event, whenever a wlan client is
@@ -2740,6 +2814,7 @@ struct ipa_msg_meta {
 struct ipa_wlan_msg {
 	char name[IPA_RESOURCE_NAME_MAX];
 	uint8_t mac_addr[IPA_MAC_ADDR_SIZE];
+	int16_t if_index;
 };
 
 /**
@@ -2784,7 +2859,7 @@ struct ipa_wlan_hdr_attrib_val {
 struct ipa_wlan_msg_ex {
 	char name[IPA_RESOURCE_NAME_MAX];
 	uint8_t num_of_attribs;
-	struct ipa_wlan_hdr_attrib_val attribs[0];
+	struct ipa_wlan_hdr_attrib_val attribs[];
 };
 
 /**
@@ -2998,7 +3073,7 @@ struct ipa_ioc_generate_flt_eq {
 };
 
 /**
- * struct ipa_ioc_write_qmapid - to write mux id to endpoint meta register
+ * struct ipa_ioc_write_qmapid - to write mux id to endpoint metadata register
  * @mux_id: mux id of wan
  */
 struct ipa_ioc_write_qmapid {
@@ -3136,6 +3211,8 @@ struct ipa_tether_device_info {
  */
 enum ipa_vlan_ifaces {
 	IPA_VLAN_IF_ETH,
+	IPA_VLAN_IF_ETH0,
+	IPA_VLAN_IF_ETH1,
 	IPA_VLAN_IF_RNDIS,
 	IPA_VLAN_IF_ECM
 };
@@ -3353,9 +3430,33 @@ struct ipa_ioc_macsec_info {
 	__u32 padding;
 };
 
+
+enum ipa_ext_router_mode {
+	IPA_PREFIX_DISABLED = 0,
+	IPA_PREFIX_SHARING,
+	IPA_PREFIX_DELEGATION
+};
+
+/**
+ * struct ipa_ioc_ext_router_info - provide ext_router info
+ * @ipa_ext_router_mode: prefix sharing, prefix delegation, or disabled mode
+ * @pdn_name: PDN interface name
+ * @ipv6_addr: the prefix addr used for dummy or delegated prefixes
+ * @ipv6_mask: the ipv6 mask used to mask above addr to get the correct prefix
+ */
+struct ipa_ioc_ext_router_info {
+	enum ipa_ext_router_mode mode;
+	char pdn_name[IPA_RESOURCE_NAME_MAX];
+	uint32_t ipv6_addr[4];
+	uint32_t ipv6_mask[4];
+};
+
 /**
  *   actual IOCTLs supported by IPA driver
  */
+#define IPA_IOC_COAL_EVICT_POLICY _IOWR(IPA_IOC_MAGIC, \
+					IPA_IOCTL_COAL_EVICT_POLICY, \
+					struct ipa_ioc_coal_evict_policy *)
 #define IPA_IOC_ADD_HDR _IOWR(IPA_IOC_MAGIC, \
 					IPA_IOCTL_ADD_HDR, \
 					struct ipa_ioc_add_hdr *)
@@ -3633,8 +3734,6 @@ struct ipa_ioc_macsec_info {
 #define IPA_IOC_DEL_UC_ACT_ENTRY _IOWR(IPA_IOC_MAGIC, \
 				IPA_IOCTL_DEL_UC_ACT_ENTRY, \
 				__u16)
-#define IPA_IOC_QUERY_CACHED_DRIVER_MSG _IO(IPA_IOC_MAGIC,\
-				IPA_IOCTL_QUERY_CACHED_DRIVER_MSG)
 
 #define IPA_IOC_SET_SW_FLT _IOWR(IPA_IOC_MAGIC, \
 				IPA_IOCTL_SET_SW_FLT, \
@@ -3662,6 +3761,17 @@ struct ipa_ioc_macsec_info {
 				IPA_IOCTL_DEL_MACSEC_MAPPING, \
 				struct ipa_ioc_macsec_info)
 
+#define IPA_IOC_SET_NAT_EXC_RT_TBL_IDX _IOW(IPA_IOC_MAGIC, \
+				IPA_IOCTL_SET_NAT_EXC_RT_TBL_IDX, \
+				uint32_t)
+
+#define IPA_IOC_SET_CONN_TRACK_EXC_RT_TBL_IDX _IOW(IPA_IOC_MAGIC, \
+				IPA_IOCTL_SET_CONN_TRACK_EXC_RT_TBL_IDX, \
+				uint32_t)
+
+#define IPA_IOC_SET_EXT_ROUTER_MODE _IOWR(IPA_IOC_MAGIC, \
+				IPA_IOCTL_SET_EXT_ROUTER_MODE, \
+				struct ipa_ioc_ext_router_info)
 /*
  * unique magic number of the Tethering bridge ioctls
  */
@@ -3728,7 +3838,7 @@ struct teth_aggr_params {
  */
 struct teth_aggr_capabilities {
 	uint16_t num_protocols;
-	struct teth_aggr_params_link prot_caps[0];
+	struct teth_aggr_params_link prot_caps[];
 };
 
 /**
@@ -3749,6 +3859,66 @@ struct teth_ioc_set_bridge_mode {
 struct teth_ioc_aggr_params {
 	struct teth_aggr_params aggr_params;
 	uint16_t lcid;
+};
+
+/**
+ * struct ipa_ioc_coal_evict_policy -
+ *
+ *   Structure used with the IPA_IOCTL_COAL_EVICT_POLICY ioctl to
+ *   control TCP/UDP eviction policy.
+ *
+ * @coal_vp_thrshld:
+ *
+ *   Connection that is opened below this val will not get
+ *   evicted. valid till v5_2.
+ *
+ * @coal_eviction_en:
+ *
+ *   bool -> Enable eviction
+ *
+ * @coal_vp_gran_sel:
+ *
+ * Select the appropriate time granularity: four possible values (0-3)
+ * Valid from v5_5.
+ *
+ * @coal_vp_udp_thrshld:
+ *
+ *   Coalescing eviction threshold. LRU VP stickness/inactivity
+ *   defined by this threshold fot UDP connectiom.  0 mean all UDP's
+ *   non sticky. Valid from v5_5.
+ *
+ * @coal_vp_tcp_thrshld:
+ *
+ *   Coalescing eviction threshold. LRU VP stickness/inactivity
+ *   defined by this threshold fot TCP connection.  0 mean all TCP's
+ *   non sticky. Valid from v5_5.
+ *
+ * @coal_vp_udp_thrshld_en:
+ *
+ *   bool -> Coalescing eviction enable for UDP connections when UDP
+ *   pacjet arrived. 0-disable these evictions. Valid from v5_5.
+ *
+ * @coal_vp_tcp_thrshld_en:
+ *
+ *   bool -> Coalescing eviction enable for TCP connections when TCP
+ *   pacjet arrived. 0-disable these evictions. Valid from v5_5.
+ *
+ * @coal_vp_tcp_num:
+ *
+ *   Configured TCP NUM value. SW define when TCP/UDP will treat as
+ *   excess during eviction process. Valid from v5_5.
+ */
+struct ipa_ioc_coal_evict_policy {
+	uint32_t coal_vp_thrshld;
+	uint32_t reserved1; /* reserved bits for alignment */
+	uint8_t  coal_eviction_en;
+	uint8_t  coal_vp_gran_sel;
+	uint8_t  coal_vp_udp_thrshld;
+	uint8_t  coal_vp_tcp_thrshld;
+	uint8_t  coal_vp_udp_thrshld_en;
+	uint8_t  coal_vp_tcp_thrshld_en;
+	uint8_t  coal_vp_tcp_num;
+	uint8_t  reserved2; /* reserved bits for alignment */
 };
 
 /**

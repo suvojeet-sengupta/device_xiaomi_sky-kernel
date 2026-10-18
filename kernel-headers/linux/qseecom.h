@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only WITH Linux-syscall-note */
 /*
- * Copyright (c) 2017, 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017, 2019, 2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _QSEECOM_H_
@@ -13,7 +14,7 @@
 #define MAX_APP_NAME_SIZE  64
 #define QSEECOM_HASH_SIZE  32
 
-/* qseecom_ta_heap allocation retry delay (ms) and max attemp count */
+/* qseecom_ta_heap allocation retry delay (ms) and max attempt count */
 #define QSEECOM_TA_ION_ALLOCATE_DELAY           50
 #define QSEECOM_TA_ION_ALLOCATE_MAX_ATTEMP      20
 

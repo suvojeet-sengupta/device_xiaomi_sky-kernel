@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only WITH Linux-syscall-note */
 /*
  * Copyright (c) 2013-2021, The Linux Foundation. All rights reserved.
+ *
+ * Copyright (c) 2021-2024, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 /*
@@ -40,6 +42,10 @@
 #define QMI_IPA_IPFLTR_NUM_IHL_RANGE_16_EQNS_V01 2
 #define QMI_IPA_MAX_FILTERS_V01 64
 #define QMI_IPA_IPFLTR_NUM_MEQ_128_EQNS_V01 2
+#define QMI_IPA_MAX_IPV4_ADD_LEN_V01 34
+#define QMI_IPA_MAX_IPV6_ADD_LEN_V01 35
+#define QMI_IPA_IPV6_WORD_ADDR_LEN_V01 4
+#define QMI_IPA_MAX_ETH_HDR_SIZE_V01 64
 #define QMI_IPA_ENDP_DESC_NUM_MAX_V01 31
 #define QMI_IPA_MAX_APN_V01 8
 /* Currently max we can use is only 1. But for scalability purpose
@@ -84,6 +90,13 @@ enum ipa_qmi_error_type_v01 {
 	IPA_QMI_ERR_ENCODING_V01 = 0x003A,
 	IPA_QMI_ERR_INCOMPATIBLE_STATE_V01 = 0x005A,
 	IPA_QMI_ERR_NOT_SUPPORTED_V01 = 0x005E,
+	/* OPT_DPATH specific.*/
+	IPA_QMI_OPT_DPATH_RESP_ERR_FAILURE = 200,
+	IPA_QMI_OPT_DPATH_RESP_ERR_INTERNAL = 201,
+	IPA_QMI_OPT_DPATH_RESP_ERR_TIMEOUT = 202,
+	IPA_QMI_OPT_DPATH_RESP_SUCCESS_HIGH_TPUT = 203,
+	IPA_QMI_OPT_DPATH_RESP_SUCCESS_SHUTDOWN =  204,
+	IPA_QMI_OPT_DPATH_RESP_SUCCESS_SSR = 205,
 	IPA_QMI_ERROR_TYPE_MAX_ENUM_VAL_V01 = IPA_INT_MAX,
 };
 
@@ -648,7 +661,7 @@ struct ipa_filter_rule_type_v01 {
 
 	__u8 num_ihl_offset_range_16;
 	/*  The number of 16 bit range check rules at the location
-	 *	determined by IP header length plus a given offset offset
+	 *	determined by IP header length plus a given offset
 	 *	in this rule. See the definition of the ipa_filter_range_eq_16
 	 *	for better understanding. The value of this field cannot exceed
 	 *	IPA_IPFLTR_NUM_IHL_RANGE_16_EQNS which is set as 2
@@ -759,7 +772,7 @@ struct ipa_filter_rule_req2_type_v01 {
 
 	__u8 num_ihl_offset_range_16;
 	/*  The number of 16 bit range check rules at the location
-	 *	determined by IP header length plus a given offset offset
+	 *	determined by IP header length plus a given offset
 	 *	in this rule. See the definition of the ipa_filter_range_eq_16
 	 *	for better understanding. The value of this field cannot exceed
 	 *	IPA_IPFLTR_NUM_IHL_RANGE_16_EQNS which is set as 2
@@ -2815,6 +2828,376 @@ struct ipa_move_nat_table_complt_ind_msg_v01 {
 };  /* Message */
 #define QMI_IPA_NAT_TABLE_MOVE_COMPLETE_IND_MAX_MSG_LEN_V01 7
 
+/*
+ * Request Message; Sends IPA WLAN OPT DATA PATH RESERVED FILTER REQUEST
+ */
+struct ipa_wlan_opt_dp_rsrv_filter_req_msg_v01 {
+
+  /* Mandatory */
+  /*  Number of filters */
+	__u8 num_filters;
+  /* Mandatory */
+  /*  Timeout value in milisecond */
+	__u32 timeout_val_ms;
+  /* Mandatory */
+  /*  Q6 routing table index */
+	__u32 q6_rtng_table_index;
+
+};
+#define IPA_WLAN_OPT_DP_RSRV_FILTER_REQ_MSG_V01_MAX_MSG_LEN 18
+
+/*
+ * Response Message; Sent for IPA WLAN OPT DATA PATH RESERVED FILTER REQUEST
+ */
+struct ipa_wlan_opt_dp_rsrv_filter_resp_msg_v01 {
+
+	/* Mandatory */
+	/* Result Code */
+	struct ipa_qmi_response_type_v01 resp;
+	/*
+	 * Standard response type.
+	 * Standard response type. Contains the following data members:
+	 * qmi_result_type -- QMI_RESULT_SUCCESS or QMI_RESULT_FAILURE
+	 * qmi_error_type  -- Error code. Possible error code values are
+	 * described in the error codes section of each message definition.
+	 */
+};
+#define IPA_WLAN_OPT_DP_RSRV_FILTER_RESP_MSG_V01_MAX_MSG_LEN 7
+
+/*
+ * Response Message;  Indicates completion of reserve filter status
+ *	       Apps driver sends indication to the modem driver that filter reservation
+ *	       was successful.
+ */
+struct ipa_wlan_opt_dp_rsrv_filter_complt_ind_msg_v01 {
+
+	/* Mandatory */
+	/* Result Code */
+	struct ipa_qmi_response_type_v01 rsrv_filter_status;
+	/*
+	 * Standard response type.
+	 * Standard response type. Contains the following data members:
+	 * qmi_result_type -- QMI_RESULT_SUCCESS or QMI_RESULT_FAILURE
+	 * qmi_error_type  -- Error code. Possible error code values are
+	 * described in the error codes section of each message definition.
+	 */
+};
+#define IPA_WLAN_OPT_DP_RSRV_FILTER_COMPLT_IND_MSG_V01_MAX_MSG_LEN 7
+
+struct ip_hdr_v4_address_info_v01 {
+	/* V4 source IP address */
+	__u32 source;
+	/* V4 destination IP address */
+	__u32 dest;
+};
+
+struct ip_hdr_v6_address_info_v01 {
+	/* V6 source IP address */
+	__u32 source[QMI_IPA_IPV6_WORD_ADDR_LEN_V01];
+	/* V6 destination IP address */
+	__u32 dest[QMI_IPA_IPV6_WORD_ADDR_LEN_V01];
+};
+
+/** Request Message; Sends QMI_IPA_WLAN_OPT_DATAPATH_SET_WLAN_CTRL_READY_REQ_V01 */
+struct ipa_wlan_opt_dp_set_wlan_ctrl_ready_req_msg_v01 {
+	/* Mandatory */
+	/* WLAN ready */
+	__u8 wlan_ready;
+	/* Mandatory */
+	/* Source WLAN endpoint id */
+	__u32 src_wlan_endp_id;
+	/* Mandatory */
+	/* Destination WLAN endpoint id */
+	__u32 dest_wlan_endp_id;
+	/* Mandatory */
+	/* Destination APPS endpoint id */
+	__u32 dest_apps_endp_id;
+};
+#define IPA_WLAN_OPT_DP_SET_WLAN_CTRL_READY_REQ_MSG_V01_MAX_MSG_LEN 25
+
+/** Response Message; sent for QMI_IPA_WLAN_OPT_DATAPATH_SET_WLAN_CTRL_READY_RESP */
+struct ipa_wlan_opt_dp_set_wlan_ctrl_ready_resp_msg_v01 {
+	/* Mandatory */
+	/* Result Code */
+	struct ipa_qmi_response_type_v01 resp;
+	/*
+	 * Standard response type.
+	 * Standard response type. Contains the following data members:
+	 * qmi_result_type -- QMI_RESULT_SUCCESS or QMI_RESULT_FAILURE
+	 * qmi_error_type  -- Error code. Possible error code values are
+	 * described in the error codes section of each message definition.
+	 */
+
+	/* Mandatory */
+	/*  Q6 routing table index */
+	__u32 q6_rtng_table_index;
+};
+#define IPA_WLAN_OPT_DP_SET_WLAN_CTRL_READY_RESP_MSG_V01_MAX_MSG_LEN 14
+
+/** Request Message; Sends QMI_IPA_WLAN_OPT_DATAPATH_WLAN_CTRL_PACKET_RCVD_REQ */
+struct ipa_wlan_opt_dp_wlan_ctrl_pkt_rcvd_req_msg_v01 {
+  /* Mandatory */
+  /*  packet count */
+	__u32 packet_count;
+};
+
+/*
+ * Response Message;  Indicates completion of packet decrement
+ * based on num packets sent
+ */
+
+struct ipa_wlan_opt_dp_wlan_ctrl_pkt_rcvd_resp_msg_v01 {
+
+	/* Mandatory */
+	/* Result Code */
+	struct ipa_qmi_response_type_v01 resp;
+	/*
+	 * Standard response type.
+	 * Standard response type. Contains the following data members:
+	 * qmi_result_type -- QMI_RESULT_SUCCESS or QMI_RESULT_FAILURE
+	 * qmi_error_type  -- Error code. Possible error code values are
+	 * described in the error codes section of each message definition.
+	 */
+};
+#define IPA_WLAN_OPT_DP_WLAN_CTRL_PACKET_RCVD_RESP_MSG_V01_MAX_MSG_LEN 7
+
+/** Request Message; Sends QMI_IPA_WLAN_OPT_DATAPATH_ADD_FILTER_REQ */
+struct ipa_wlan_opt_dp_add_filter_req_msg_v01 {
+  /* Mandatory */
+  /*  filter index */
+	__u32 filter_idx;
+  /* Mandatory */
+  /*  IP type */
+	enum ipa_ip_type_enum_v01 ip_type;
+  /* Optional */
+	__u8 v4_addr_valid;  /**< Must be set to true if v4_addr is being passed */
+  /*  IPv4 address */
+	struct ip_hdr_v4_address_info_v01 v4_addr;
+	__u8 v6_addr_valid;  /**< Must be set to true if v6_addr is being passed */
+  /*  IPv6 address */
+	struct ip_hdr_v6_address_info_v01 v6_addr;
+  /* Optional */
+	__u8 src_port_num_valid;  /**< Must be set to true if src_port_num is being passed */
+  /*  Source port number */
+	__u16 src_port_num;
+  /* Optional */
+	__u8 dest_port_num_valid;  /**< Must be set to true if dest_port_num is being passed */
+  /*  Destination port number */
+	__u16 dest_port_num;
+};
+#define IPA_WLAN_OPT_DP_ADD_FILTER_REQ_MSG_V01_MAX_MSG_LEN 70
+
+/*
+ * Response Message;  Indicates completion of add  filter status
+ *	       Apps driver sends indication to the modem driver that filter addition
+ *	       was successful.
+ */
+
+struct ipa_wlan_opt_dp_add_filter_resp_msg_v01 {
+
+	/* Mandatory */
+	/* Result Code */
+	struct ipa_qmi_response_type_v01 resp;
+	/*
+	 * Standard response type.
+	 * Standard response type. Contains the following data members:
+	 * qmi_result_type -- QMI_RESULT_SUCCESS or QMI_RESULT_FAILURE
+	 * qmi_error_type  -- Error code. Possible error code values are
+	 * described in the error codes section of each message definition.
+	 */
+};
+#define IPA_WLAN_OPT_DP_ADD_FILTER_RESP_MSG_V01_MAX_MSG_LEN 7
+
+/*
+ *	Indication Message; Indicates completion of add filter request
+ *	Apps driver sends indication to the modem driver that filter addition
+ *	was successful.
+ */
+struct ipa_wlan_opt_dp_add_filter_complt_ind_msg_v01 {
+  /* Mandatory */
+  /* Filter removal status */
+	struct ipa_qmi_response_type_v01 filter_add_status;
+  /*
+   * Standard response type.
+   * Standard response type. Contains the following data members:
+   * qmi_result_type -- QMI_RESULT_SUCCESS or QMI_RESULT_FAILURE
+   * qmi_error_type  -- Error code. Possible error code values are
+   * described in the error codes section of each message definition.
+   */
+
+  /* Mandatory */
+  /*  filter index */
+	__u32 filter_idx;
+
+  /* Optional */
+	__u8 filter_handle_valid;  /**< Must be set to true if filter_handle is being passed */
+
+  /* filter handle */
+	__u32 filter_handle;
+};
+#define IPA_WLAN_OPT_DP_ADD_FILTER_COMPLT_IND_MSG_V01_MAX_MSG_LEN 21
+
+/*
+ * Request Message; Sends QMI_IPA_WLAN_OPT_DATAPATH_REMOVE_FILTER_REQ
+ */
+struct ipa_wlan_opt_dp_remove_filter_req_msg_v01 {
+  /* Mandatory */
+  /*  filter index */
+	__u32 filter_idx;
+
+  /* Mandatory */
+  /*  filter handle */
+	__u32 filter_handle;
+};
+#define IPA_WLAN_OPT_DP_REMOVE_FILTER_REQ_MSG_V01_MAX_MSG_LEN 14
+
+/*
+ * Response Message;  Indicates completion of remove  filter status
+ * Apps driver sends indication to the modem driver that filter removal
+ * was successful.
+ */
+
+struct ipa_wlan_opt_dp_remove_filter_resp_msg_v01 {
+
+	/* Mandatory */
+	/* Result Code */
+	struct ipa_qmi_response_type_v01 resp;
+	/*
+	 * Standard response type.
+	 * Standard response type. Contains the following data members:
+	 * qmi_result_type -- QMI_RESULT_SUCCESS or QMI_RESULT_FAILURE
+	 * qmi_error_type  -- Error code. Possible error code values are
+	 * described in the error codes section of each message definition.
+	 */
+};
+#define IPA_WLAN_OPT_DP_REMOVE_FILTER_RESP_MSG_V01_MAX_MSG_LEN 7
+
+struct ipa_wlan_opt_dp_remove_filter_complt_ind_msg_v01 {
+  /* Mandatory */
+  /*  Filter removal status */
+	struct ipa_qmi_response_type_v01 filter_removal_status;
+  /*
+   * Standard response type.
+   * Standard response type. Contains the following data members:
+   * qmi_result_type -- QMI_RESULT_SUCCESS or QMI_RESULT_FAILURE
+   * qmi_error_type  -- Error code. Possible error code values are
+   * described in the error codes section of each message definition.
+   */
+
+  /* Mandatory */
+  /*  filter index */
+	__u32 filter_idx;
+};
+#define IPA_WLAN_OPT_DP_REM_FILTER_COMPLT_IND_MSG_V01_MAX_MSG_LEN 14
+
+/** Request Message; Sends QMI_IPA_WLAN_OPT_DATAPATH_REMOVE_ALL_FILTER_REQ */
+struct ipa_wlan_opt_dp_remove_all_filter_req_msg_v01 {
+
+  /* Optional */
+  /*  REMOVE ALL FILTER */
+	__u8 reserved_valid;  /**< Must be set to true if reserved is being passed */
+	__u8 reserved;
+
+};
+#define IPA_WLAN_OPT_DP_REM_ALL_FILTER_REQ_MSG_V01_MAX_MSG_LEN 4
+/*
+ * Response Message;  Indicates completion of remove  filter status
+ *	       Apps driver sends indication to the modem driver that filter removal
+ *	       was successful.
+ */
+
+struct ipa_wlan_opt_dp_remove_all_filter_resp_msg_v01 {
+
+	/* Mandatory */
+	/* Result Code */
+	struct ipa_qmi_response_type_v01 resp;
+	/*
+	 * Standard response type.
+	 * Standard response type. Contains the following data members:
+	 * qmi_result_type -- QMI_RESULT_SUCCESS or QMI_RESULT_FAILURE
+	 * qmi_error_type  -- Error code. Possible error code values are
+	 * described in the error codes section of each message definition.
+	 */
+};
+#define IPA_WLAN_OPT_DP_REMOVE_ALL_FILTER_RESP_MSG_V01_MAX_MSG_LEN 7
+
+struct ipa_wlan_opt_dp_remove_all_filter_complt_ind_msg_v01 {
+
+  /* Mandatory */
+  /*  Filter removal status */
+	struct ipa_qmi_response_type_v01 filter_removal_all_status;
+  /*
+   * Standard response type.
+   * Standard response type. Contains the following data members:
+   * qmi_result_type -- QMI_RESULT_SUCCESS or QMI_RESULT_FAILURE
+   * qmi_error_type  -- Error code. Possible error code values are
+   * described in the error codes section of each message definition.
+   */
+
+};
+#define IPA_WLAN_OPT_DP_REM_ALL_FILTER_COMPLT_IND_MSG_V01_MAX_MSG_LEN 7
+
+struct ipa_wlan_opt_dp_remove_ctrl_filter_complt_ind_msg_v01 {
+
+    /* Mandatory */
+    /*  Filter removal status */
+	struct ipa_qmi_response_type_v01 ctrl_filter_removal_status;
+	/*
+	 * Standard response type.
+	 * Standard response type. Contains the following data members:
+	 * qmi_result_type -- QMI_RESULT_SUCCESS or QMI_RESULT_FAILURE
+	 * qmi_error_type  -- Error code. Possible error code values are
+	 * described in the error codes section of each message definition.
+	 */
+
+	/* Mandatory */
+	/*  filter index */
+	__u32 filter_idx;
+
+};
+#define IPA_WLAN_OPT_DP_REM_CTRL_FILTER_COMPLT_IND_MSG_V01_MAX_MSG_LEN 14
+
+struct ipa_wlan_opt_dp_set_wlan_per_info_req_msg_v01 {
+
+  /* Mandatory */
+  /*  Source WLAN EP ID */
+	__u32 src_wlan_endp_id;
+  /* Mandatory */
+  /*  Destination WLAN EP ID */
+	__u32 dest_wlan_endp_id;
+  /* Mandatory */
+  /*  Destination APPS EP ID */
+	__u32 dest_apps_endp_id;
+  /* Mandatory */
+  /* HDR LEN */
+	__u32 hdr_len;
+  /* Mandatory */
+  /* ETH HDR Offset */
+	__u32 eth_hdr_offset;
+  /* Mandatory */
+  /*	PARTIAL HDR INFO */
+	__u8 hdr_info[QMI_IPA_MAX_ETH_HDR_SIZE_V01];
+};
+#define IPA_WLAN_OPT_DP_SET_WLAN_PER_INFO_REQ_MSG_V1_MAX_MSG_LEN 102
+
+/** Response Message; Sends QMI_IPA_WLAN_OPT_DATAPATH_SET_WLAN_PER_INFO_REQ */
+struct ipa_wlan_opt_dp_set_wlan_per_info_resp_msg_v01 {
+
+  /* Mandatory */
+  /*  Result Code */
+	struct ipa_qmi_response_type_v01 resp;
+  /*
+   * Standard response type.
+   * Standard response type. Contains the following data members:
+   * qmi_result_type -- QMI_RESULT_SUCCESS or QMI_RESULT_FAILURE
+   * qmi_error_type  -- Error code. Possible error code values are
+   * described in the error codes section of each message definition.
+   */
+
+};
+#define IPA_WLAN_OPT_DP_SET_WLAN_PER_INFO_RESP_MSG_V1_MAX_MSG_LEN 7
+
+
 /*Service Message Definition*/
 #define QMI_IPA_INDICATION_REGISTER_REQ_V01 0x0020
 #define QMI_IPA_INDICATION_REGISTER_RESP_V01 0x0020
@@ -2873,6 +3256,31 @@ struct ipa_move_nat_table_complt_ind_msg_v01 {
 #define QMI_IPA_MOVE_NAT_REQ_V01 0x0046
 #define QMI_IPA_MOVE_NAT_RESP_V01 0x0046
 #define QMI_IPA_MOVE_NAT_COMPLETE_IND_V01 0x0046
+#define QMI_IPA_WLAN_OPT_DATAPATH_RSRV_FILTER_REQ_V01 0x0049
+#define QMI_IPA_WLAN_OPT_DATAPATH_RSRV_FILTER_RESP_V01 0x0049
+#define QMI_IPA_WLAN_OPT_DATAPATH_RSRV_FILTER_COMPLT_IND_V01 0x0049
+#define QMI_IPA_WLAN_OPT_DATAPATH_ADD_FILTER_REQ_V01 0x004A
+#define QMI_IPA_WLAN_OPT_DATAPATH_ADD_FILTER_RESP_V01 0x004A
+#define QMI_IPA_WLAN_OPT_DATAPATH_ADD_FILTER_COMPLT_IND_V01 0x004A
+#define QMI_IPA_WLAN_OPT_DATAPATH_REMOVE_FILTER_REQ_V01 0x004B
+#define QMI_IPA_WLAN_OPT_DATAPATH_REMOVE_FILTER_RESP_V01 0x004B
+#define QMI_IPA_WLAN_OPT_DATAPATH_REMOVE_FILTER_COMPLT_IND_V01 0x004B
+#define QMI_IPA_WLAN_OPT_DATAPATH_REMOVE_ALL_FILTER_REQ_V01 0x004C
+#define QMI_IPA_WLAN_OPT_DATAPATH_REMOVE_ALL_FILTER_RESP_V01 0x004C
+#define QMI_IPA_WLAN_OPT_DATAPATH_REMOVE_ALL_FILTER_COMPLT_IND_V01 0x004C
+#define QMI_IPA_WLAN_OPT_DATAPATH_SET_WLAN_PER_INFO_REQ_V01 0x004D
+#define QMI_IPA_WLAN_OPT_DATAPATH_SET_WLAN_PER_INFO_RESP_V01 0x004D
+#define QMI_IPA_WLAN_OPT_DATAPATH_SET_WLAN_CTRL_READY_REQ_V01 0x004E
+#define QMI_IPA_WLAN_OPT_DATAPATH_SET_WLAN_CTRL_READY_RESP_V01 0x004E
+#define QMI_IPA_WLAN_OPT_DATAPATH_WLAN_CTRL_PACKET_RCVD_REQ_V01 0x004F
+#define QMI_IPA_WLAN_OPT_DATAPATH_WLAN_CTRL_PACKET_RCVD_RESP_V01 0x004F
+#define QMI_IPA_WLAN_OPT_DATAPATH_ADD_CTRL_FILTER_REQ_V01 0x0050
+#define QMI_IPA_WLAN_OPT_DATAPATH_ADD_CTRL_FILTER_RESP_V01 0x0050
+#define QMI_IPA_WLAN_OPT_DATAPATH_ADD_CTRL_FILTER_COMPLT_IND_V01 0x0050
+#define QMI_IPA_WLAN_OPT_DATAPATH_REMOVE_CTRL_FILTER_REQ_V01 0x0051
+#define QMI_IPA_WLAN_OPT_DATAPATH_REMOVE_CTRL_FILTER_RESP_V01 0x0051
+#define QMI_IPA_WLAN_OPT_DATAPATH_REMOVE_CTRL_FILTER_COMPLT_IND_V01 0x0051
+
 
 /* add for max length*/
 #define QMI_IPA_INIT_MODEM_DRIVER_REQ_MAX_MSG_LEN_V01 197
