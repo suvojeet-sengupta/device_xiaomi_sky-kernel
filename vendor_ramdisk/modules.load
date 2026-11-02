@@ -33,6 +33,7 @@ qcom-pmu-lib.ko
 dcvs_fp.ko
 qcom-dcvs.ko
 qcom_cpucp.ko
+qcom-cpufreq-hw.ko
 mem_buf.ko
 mem_buf_dev.ko
 mem_buf_msgq.ko
