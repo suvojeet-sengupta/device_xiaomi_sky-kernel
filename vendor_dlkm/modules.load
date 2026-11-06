@@ -35,7 +35,6 @@ qcom_va_minidump.ko
 qcom_logbuf_vendor_hooks.ko
 qcom_logbuf_boot_log.ko
 gic_intr_routing.ko
-hung_task_enh.ko
 memlat.ko
 bwmon.ko
 cpucp_log.ko
@@ -53,7 +52,6 @@ pmic-pon-log.ko
 dmesg_dumper.ko
 gh_tlmm_vm_mem_access.ko
 qfprom-sys.ko
-msm_performance.ko
 fsa4480-i2c.ko
 qti-fixed-regulator.ko
 qcom_pm8008-regulator.ko
