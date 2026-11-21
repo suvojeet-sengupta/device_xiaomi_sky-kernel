@@ -17367,6 +17367,7 @@
 0x9a7e7b53	altmode_deregister_client	drivers/soc/qcom/altmode-glink	EXPORT_SYMBOL	
 0xddcbad69	debug_symbol_available	drivers/soc/qcom/debug_symbol	EXPORT_SYMBOL_GPL	
 0x410590e5	debug_symbol_lookup_name	drivers/soc/qcom/debug_symbol	EXPORT_SYMBOL_GPL	
+0x2c5bf99d	msm_perf_events_update	drivers/soc/qcom/msm_performance	EXPORT_SYMBOL_GPL	
 0x9ad349e2	fsa4480_reg_notifier	drivers/soc/qcom/fsa4480-i2c	EXPORT_SYMBOL_GPL	
 0x7a182947	fsa4480_unreg_notifier	drivers/soc/qcom/fsa4480-i2c	EXPORT_SYMBOL_GPL	
 0x849a6f15	fsa4480_switch_event	drivers/soc/qcom/fsa4480-i2c	EXPORT_SYMBOL_GPL	
